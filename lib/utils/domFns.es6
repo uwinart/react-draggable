@@ -1,30 +1,10 @@
-// @flow
 import {findInArray, isFunction, isNum, int} from './shims';
 import browserPrefix from './getPrefix';
+import assign from 'object-assign';
 import ReactDOM from 'react-dom';
 
-import type Draggable from '../Draggable';
-import type DraggableCore from '../DraggableCore';
-
-export type CoreEvent = {
-  node: HTMLElement,
-  position: {
-    deltaX: number, deltaY: number,
-    lastX: number, lastY: number,
-    clientX: number, clientY: number
-  }
-};
-
-export type UIEvent = {
-  node: HTMLElement,
-  position: {
-    left: number, top: number
-  },
-  deltaX: number, deltaY: number
-};
-
 let matchesSelectorFunc = '';
-export function matchesSelector(el: HTMLElement, selector: string): boolean {
+export function matchesSelector(el: Node, selector: string) {
   if (!matchesSelectorFunc) {
     matchesSelectorFunc = findInArray([
       'matches',
@@ -33,40 +13,36 @@ export function matchesSelector(el: HTMLElement, selector: string): boolean {
       'msMatchesSelector',
       'oMatchesSelector'
     ], function(method){
-      // $FlowIgnore: Doesn't think elements are indexable
       return isFunction(el[method]);
     });
   }
 
-  // $FlowIgnore: Doesn't think elements are indexable
   return el[matchesSelectorFunc].call(el, selector);
 }
 
-export function addEvent(el: ?Node, event: string, handler: Function): void {
+export function addEvent(el: ?Node, event: string, handler: Function) {
   if (!el) { return; }
   if (el.attachEvent) {
     el.attachEvent('on' + event, handler);
   } else if (el.addEventListener) {
     el.addEventListener(event, handler, true);
   } else {
-    // $FlowIgnore: Doesn't think elements are indexable
     el['on' + event] = handler;
   }
 }
 
-export function removeEvent(el: ?Node, event: string, handler: Function): void {
+export function removeEvent(el: ?Node, event: string, handler: Function) {
   if (!el) { return; }
   if (el.detachEvent) {
     el.detachEvent('on' + event, handler);
   } else if (el.removeEventListener) {
     el.removeEventListener(event, handler, true);
   } else {
-    // $FlowIgnore: Doesn't think elements are indexable
     el['on' + event] = null;
   }
 }
 
-export function outerHeight(node: HTMLElement): number {
+export function outerHeight(node: Node) {
   // This is deliberately excluding margin for our calculations, since we are using
   // offsetTop which is including margin. See getBoundPosition
   let height = node.clientHeight;
@@ -76,7 +52,7 @@ export function outerHeight(node: HTMLElement): number {
   return height;
 }
 
-export function outerWidth(node: HTMLElement): number {
+export function outerWidth(node: Node) {
   // This is deliberately excluding margin for our calculations, since we are using
   // offsetLeft which is including margin. See getBoundPosition
   let width = node.clientWidth;
@@ -85,7 +61,7 @@ export function outerWidth(node: HTMLElement): number {
   width += int(computedStyle.borderRightWidth);
   return width;
 }
-export function innerHeight(node: HTMLElement): number {
+export function innerHeight(node: Node) {
   let height = node.clientHeight;
   let computedStyle = window.getComputedStyle(node);
   height -= int(computedStyle.paddingTop);
@@ -93,7 +69,7 @@ export function innerHeight(node: HTMLElement): number {
   return height;
 }
 
-export function innerWidth(node: HTMLElement): number {
+export function innerWidth(node: Node) {
   let width = node.clientWidth;
   let computedStyle = window.getComputedStyle(node);
   width -= int(computedStyle.paddingLeft);
@@ -101,7 +77,12 @@ export function innerWidth(node: HTMLElement): number {
   return width;
 }
 
-export function createCSSTransform({x, y}: {x: number, y: number}): Object {
+export function createTransform(position: Object, isSVG: ?boolean) {
+  if (isSVG) return createSVGTransform(position);
+  return createCSSTransform(position);
+}
+
+export function createCSSTransform({x, y}: {x: number, y: number}) {
   // Replace unitless items with px
   let out = {transform: 'translate(' + x + 'px,' + y + 'px)'};
   // Add single prefixed property as well
@@ -111,7 +92,7 @@ export function createCSSTransform({x, y}: {x: number, y: number}): Object {
   return out;
 }
 
-export function createSVGTransform({x, y}: {x: number, y: number}): string {
+export function createSVGTransform({x, y}: {x: number, y: number}) {
   return 'translate(' + x + ',' + y + ')';
 }
 
@@ -133,17 +114,18 @@ export function removeUserSelectStyles() {
   document.body.setAttribute('style', style.replace(userSelectStyle, ''));
 }
 
-export function styleHacks(childStyle: Object = {}): Object {
+export function styleHacks(childStyle = {}) {
   // Workaround IE pointer events; see #51
   // https://github.com/mzabriskie/react-draggable/issues/51#issuecomment-103488278
-  return {
-    touchAction: 'none',
-    ...childStyle
+  let touchHacks = {
+    touchAction: 'none'
   };
+
+  return assign(touchHacks, childStyle);
 }
 
 // Create an event exposed by <DraggableCore>
-export function createCoreEvent(draggable: DraggableCore, clientX: number, clientY: number): CoreEvent {
+export function createCoreEvent(draggable, clientX, clientY) {
   // State changes are often (but not always!) async. We want the latest value.
   let state = draggable._pendingState || draggable.state;
   let isStart = !isNum(state.lastX);
@@ -167,7 +149,7 @@ export function createCoreEvent(draggable: DraggableCore, clientX: number, clien
 }
 
 // Create an event exposed by <Draggable>
-export function createUIEvent(draggable: Draggable, coreEvent: CoreEvent): UIEvent {
+export function createUIEvent(draggable, coreEvent) {
   return {
     node: ReactDOM.findDOMNode(draggable),
     position: {

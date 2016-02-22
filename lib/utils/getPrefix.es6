@@ -1,5 +1,4 @@
-// @flow
-export function generatePrefix(): string {
+export default (function() {
   // Checking specifically for 'window.document' is for pseudo-browser server-side
   // environments that define 'window' as the global context.
   // E.g. React-rails (see https://github.com/reactjs/react-rails/pull/84)
@@ -10,13 +9,11 @@ export function generatePrefix(): string {
   pre = (Array.prototype.slice
         .call(styles)
         .join('')
-        .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' ? ['', 'o'] : [])
+        .match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
       )[1];
   // 'ms' is not titlecased
-  if (pre === undefined || pre === null) return '';
+  if(pre === undefined || pre === null) return '';
   if (pre === 'ms') return pre;
   if (pre === undefined || pre === null) return '';
   return pre.slice(0, 1).toUpperCase() + pre.slice(1);
-}
-
-export default generatePrefix();
+})();

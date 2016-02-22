@@ -1,4 +1,3 @@
-// @flow
 import {default as React, PropTypes} from 'react';
 import {matchesSelector, createCoreEvent, addEvent, removeEvent, addUserSelectStyles,
         removeUserSelectStyles, styleHacks} from './utils/domFns';
@@ -7,7 +6,7 @@ import {dontSetMe} from './utils/shims';
 import log from './utils/log';
 
 // Simple abstraction for dragging events names.
-const eventsFor = {
+let eventsFor = {
   touch: {
     start: 'touchstart',
     move: 'touchmove',
@@ -22,13 +21,6 @@ const eventsFor = {
 
 // Default to mouse events.
 let dragEventFor = eventsFor.mouse;
-
-type EventHandler = (e: Event) => void;
-type CoreState = {
-  dragging: boolean,
-  lastX: ?number,
-  lastY: ?number
-};
 
 //
 // Define <DraggableCore>.
@@ -230,7 +222,7 @@ export default class DraggableCore extends React.Component {
     onMouseDown: function(){}
   };
 
-  state: CoreState = {
+  state = {
     dragging: false,
     // Used while dragging to determine deltas.
     lastX: null, lastY: null
@@ -247,7 +239,7 @@ export default class DraggableCore extends React.Component {
     if (this.props.enableUserSelectHack) removeUserSelectStyles();
   }
 
-  handleDragStart: EventHandler = (e) => {
+  handleDragStart = (e) => {
     // Make it possible to attach event handlers on top of this one.
     this.props.onMouseDown(e);
 
@@ -308,7 +300,7 @@ export default class DraggableCore extends React.Component {
     addEvent(document, dragEventFor.stop, this.handleDragStop);
   };
 
-  handleDrag: EventHandler = (e) => {
+  handleDrag = (e) => {
     // Return if this is a touch event, but not the correct one for this element
     if (e.targetTouches && (e.targetTouches[0].identifier !== this.state.touchIdentifier)) return;
 
@@ -322,13 +314,13 @@ export default class DraggableCore extends React.Component {
       clientX = this.state.lastX + deltaX, clientY = this.state.lastY + deltaY;
     }
 
-    const coreEvent = createCoreEvent(this, clientX, clientY);
+    let coreEvent = createCoreEvent(this, clientX, clientY);
 
     log('DraggableCore: handleDrag: %j', coreEvent.position);
 
 
     // Call event handler. If it returns explicit false, trigger end.
-    const shouldUpdate = this.props.onDrag(e, coreEvent);
+    let shouldUpdate = this.props.onDrag(e, coreEvent);
     if (shouldUpdate === false) {
       this.handleDragStop({});
       return;
@@ -340,7 +332,7 @@ export default class DraggableCore extends React.Component {
     });
   };
 
-  handleDragStop: EventHandler = (e) => {
+  handleDragStop = (e) => {
     if (!this.state.dragging) return;
 
     // Short circuit if this is not the correct touch event. `changedTouches` contains all
@@ -351,7 +343,7 @@ export default class DraggableCore extends React.Component {
     if (this.props.enableUserSelectHack) removeUserSelectStyles();
 
     let {clientX, clientY} = getControlPosition(e);
-    const coreEvent = createCoreEvent(this, clientX, clientY);
+    let coreEvent = createCoreEvent(this, clientX, clientY);
 
     log('DraggableCore: handleDragStop: %j', coreEvent.position);
 
@@ -374,8 +366,8 @@ export default class DraggableCore extends React.Component {
 
   // When the user scrolls, adjust internal state so the draggable moves along the page properly.
   // This only fires when a drag is active.
-  handleScroll: EventHandler = (e) => {
-    const s = this.state, x = document.body.scrollLeft, y = document.body.scrollTop;
+  handleScroll = (e) => {
+    let s = this.state, x = document.body.scrollLeft, y = document.body.scrollTop;
 
     // Create the usual event, but make the scroll offset our deltas.
     let coreEvent = createCoreEvent(this);
@@ -390,22 +382,27 @@ export default class DraggableCore extends React.Component {
     this.props.onDrag(e, coreEvent);
   };
 
+  // On mousedown, consider the drag started.
+  onMouseDown = (e) => {
+    // HACK: Prevent 'ghost click' which happens 300ms after touchstart if the event isn't cancelled.
+    // We don't cancel the event on touchstart because of #37; we might want to make a scrollable item draggable.
+    // More on ghost clicks: http://ariatemplates.com/blog/2014/05/ghost-clicks-in-mobile-browsers/
+    if (dragEventFor === eventsFor.touch) {
+      return e.preventDefault();
+    }
+
+    return this.handleDragStart(e);
+  };
+
   // Same as onMouseDown (start drag), but now consider this a touch device.
-  onTouchStart: EventHandler = (e) => {
+  onTouchStart = (e) => {
     // We're on a touch device now, so change the event handlers
     dragEventFor = eventsFor.touch;
 
     return this.handleDragStart(e);
   };
 
-  onTouchEnd: EventHandler = (e) => {
-    // We're on a touch device now, so change the event handlers
-    dragEventFor = eventsFor.touch;
-
-    return this.handleDragStop(e);
-  };
-
-  render(): ReactElement {
+  render() {
     // Reuse the child provided
     // This makes it flexible to use whatever element is wanted (div, ul, etc)
     return React.cloneElement(React.Children.only(this.props.children), {
@@ -413,10 +410,10 @@ export default class DraggableCore extends React.Component {
 
       // Note: mouseMove handler is attached to document so it will still function
       // when the user drags quickly and leaves the bounds of the element.
-      onMouseDown: this.handleDragStart,
+      onMouseDown: this.onMouseDown,
       onTouchStart: this.onTouchStart,
       onMouseUp: this.handleDragStop,
-      onTouchEnd: this.onTouchEnd
+      onTouchEnd: this.handleDragStop
     });
   }
 }

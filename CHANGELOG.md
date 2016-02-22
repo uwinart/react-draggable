@@ -1,35 +1,5 @@
 # Changelog
 
-### 1.3.3 (Feb 11, 2015)
-
-- Bugfix: #116: Android/Chrome are finicky; give up on canceling ghost clicks entirely.
-
-### 1.3.2 (Feb 11, 2015)
-
-- Bugfix: #116: Child inputs not focusing on touch events.
-
-### 1.3.1 (Feb 10, 2015)
-
-- Internal: Babel 6 and Flow definitions
-- Bugfix: 1.3.0 broke string bounds ('parent', selectors, etc.).
-- Bugfix: 1.3.0 wasn't updating deltaX and deltaY on a bounds hit.
-
-### 1.3.0 (Feb 10, 2015)
-
-- Possibly breaking change: bounds are calculated before `<Draggable>` fires `drag` events, as they should have been.
-- Added `'none'` axis type. This allows using `<Draggable>` somewhat like `<DraggableCore>` - state will be kept
-  internally (which makes bounds checks etc possible), but updates will not be flushed to the DOM.
-- Performance tweaks.
-
-### 1.2.0 (Feb 5, 2015)
-
-- Added arbitrary boundary selector. Now you don't have to just use `'parent'`, you can select any element
-  on the page, including `'body'`.
-- Bugfix: Prevent invariant if a `<Draggable>` is unmounted while dragging.
-- Bugfix: Fix #133, where items would eagerly start dragging off the mouse cursor if you hit boundaries and
-  came back. This is due to how `<DraggableCore>` handles deltas only and does not keep state. Added new state
-  properties `slackX` and `slackY` to `<Draggable>` to handle this and restore pre-v1 behavior.
-
 ### 1.1.3 (Nov 25, 2015)
 
 - Bugfix: Server-side rendering with react-rails, which does bad things like mock `window`

@@ -22,21 +22,6 @@ This bundle is also what is loaded when installing from npm. It expects external
 If you want a UMD version of the latest `master` revision, you can generate it yourself from master by cloning this
 repository and running `$ make`. This will create umd dist files in the `dist/` folder.
 
-### Exports
-
-The default export is `<Draggable>`. At the `.DraggableCore` property is `<DraggableCore>`. Here's how to use it:
-
-```js
-// ES6
-import Draggable from 'react-draggable'; // The default
-import {DraggableCore} from 'react-draggable'; // <DraggableCore>
-import Draggable, {DraggableCore} from 'react-draggable'; // Both at the same time
-
-// CommonJS
-let Draggable = require('react-draggable');
-let DraggableCore = Draggable.DraggableCore;
-```
-
 ## Draggable
 
 A `<Draggable>` element wraps an existing element and extends it with new event handlers and styles.
@@ -110,13 +95,10 @@ handle: string,
 // If set to `true`, will allow dragging on non left-button clicks.
 allowAnyClick: boolean,
 
-// Determines which axis the draggable can move. This only affects
-// flushing to the DOM. Callbacks will still include all values.
-// Accepted values:
+// Determines which axis the draggable can move. Accepted values:
 // - `both` allows movement horizontally and vertically (default).
 // - `x` limits movement to horizontal axis.
 // - `y` limits movement to vertical axis.
-// - 'none' stops all movement.
 axis: string,
 
 // Specifies movement boundaries. Accepted values:
